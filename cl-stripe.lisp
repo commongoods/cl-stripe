@@ -89,7 +89,7 @@
   (defgeneric translate-request-parameter (name value)
     (:method ((name (eql :card)) (value string))
       (list (cons "card" value)))
-    
+
     (:method ((name (eql :card)) (key-values cons))
       "Transform a PLIST into a card[] dictionary-style URL parameter list for drakma."
       (loop for (key value) on key-values by #'cddr
@@ -107,7 +107,7 @@
 
     (:method ((name (eql :card)) (key-values sstruct))
       (translate-request-parameter name (sstruct->jso key-values)))
-    
+
     (:method ((name (eql :card)) (key-values t))
       (error "Don't know how to translate ~s to a card spec dictionary"
              key-values))
@@ -115,9 +115,17 @@
     (:method ((name symbol) (value string))
       (list (cons (substitute #\_ #\- (string-downcase (string name))) value)))
 
+    (:method ((name symbol) (value (eql nil)))
+      (list (cons (substitute #\_ #\- (string-downcase (string name)))
+                  "false")))
+
+    (:method ((name symbol) (value (eql t)))
+      (list (cons (substitute #\_ #\- (string-downcase (string name)))
+                  "true")))
+
     (:method (name (value integer))
       (translate-request-parameter name (write-to-string value)))
-    
+
     (:method ((name string) (value string))
       (list (cons name value)))))
 
@@ -174,7 +182,7 @@
 
 ;;; Charges
 (def-api-call :create (:charge :http-resource :charges :return-id t)
-  (amount currency customer card description)
+  (amount currency customer card description receipt-email)
   "https://stripe.com/api/docs#create_charge")
 
 (def-api-call :retrieve (:charge :id t) ()
